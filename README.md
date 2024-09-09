@@ -174,20 +174,70 @@ We have successfully modified the business logic utilized by the Caller contract
 
 
 
+# ABI Encoding:
+
+ABI encoding is the data format used to make the functions calls to smart contracts. It is also how smart contracts encode data when making calls to other smart contracts.
+
+### abi.encodeWithSignature and low level calls
+
+If we were to make a low level call to another smart contract with public function `foo(uint256 x)` (passing x = 5 as the argument), we would do the following:
+
+```solidity
+	otherSmartContractAddress.call(abi.encodeWithSignature("foo(uint256)",(5));
+```
+
+### Returning the actual Data:
+
+```solidity
+function seeEncoding() external pure returns (bytes memory) {
+	return abi.encodeWithSignature("foo(uint256)", (5)); 
+}
+```
+
+and we would get the following result (which is ABI encoded):
+```code
+0x2fbebd380000000000000000000000000000000000000000000000000000000000000005
+```
+
+# Key Components of ABI Encoded Function Call:)
+
+An encoded ABI function call is concatenation of:
+1. function selector
+2. encoded arguments to the function (if the func accepts the arguments)
 
 
+**Function Signature:** is the combination of function name and its argument types without spaces. The function signature with function below is:
+
+```solidity
+function transfer(address _to, uint256 amount) public {
+```
+transfer(address,uint256) is the function signature. Note: that you must use the full argument data types, such as uint256 instead of uint. Also, the variable names like the _to and amount are not part of the function signature. It is also important that there are no spaces in the string such as transfer(addres, uint256).
 
 
+**Function Selector:** The function selector is simply the Keccak-256 hash of a function signature that Solidity uses to identify a function. For example, the Keccak-256 hash of our previously mentioned function signature transfer(address,uint256) is this hexadecimal value:
 
+```solidity
+0xa9059cbb2ab09eb219583f4a59a5d0623ade346d962bcd4e46b11da047c9049b
+```
+However, only the first 4 bytes of the hash result 0xa9059cbb is used to identify the function; those four bytes are the function selector.
 
+```solidity
+    function getSelector() public pure returns (bytes4 ret) {
+        return bytes4(keccak256("transfer(address,uint256)")); // 0xa9059cbb
+    }
+```
 
+**Function inputs or arguments**:
 
+When calling a function that takes no arguments, the function selector alone will be all the encoding needed to call the function. For example, the function play() will be identified by its function selector 0x93e84cd9 and that will be the entire data needed.
 
+However, it gets complex if the function takes arguments, such as transfer(address to, uint256 amount), then the function arguments must be ABI encoded and concatenated to the function selector.Let’s use transfer(address to, uint256 amount) as a running example to help us understand how the argument encoding is done:
 
-
-
-
-
-
+```solidity
+function transfer(address to, uint256 amount) public {
+	//
+}
+```
+This data for the function call isn't stored permanently within the function or the contract itself. Instead, it lives in a space called “calldata.” You cannot modify the data in calldata, as it's created by the transaction sender and then becomes read-only.
 
 
