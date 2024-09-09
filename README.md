@@ -64,8 +64,13 @@ Next, if we were to introduce a 4th storage variable, address burner its value w
 NOTE: If a variable's value cannot fit entirely into the remaining space of the current storage slot, it will be stored in the next available slot.
 
 
+### Low-Level CallS
 
-
+**The Four Opcodes:** EVM offers four opcodes for making calls between contracts:
+1. CALL (F1)
+2. CALLCODE (F2)
+3. STATICCALL (FA)
+4. DELEGATECALL (F4).
 
 
 
