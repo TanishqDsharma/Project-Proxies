@@ -74,6 +74,113 @@ NOTE: If a variable's value cannot fit entirely into the remaining space of the 
 
 
 
+# Delegate Call
+
+* A contract that makes a delegate Call to a target smart contract executes the logic of the target contract inside its own environment. One mental model is that it copies the code of the target smart contract and runs that code itself. The targeted smart contract is commonly referred to as the <b>“implementation contract”</b>.
+* delegatCall also has the input data to be executed by the targetContract as a parameter
+
+Example:
+
+```solidity
+contract Called {
+  uint public number;
+
+  function increment() public {
+    number++;
+  }
+}
+```
+
+```solidity
+contract Caller {
+    uint public number;
+
+    function callIncrement(address _calledAddress) public {
+		_calledAddress.delegatecall(
+			abi.encodeWithSignature("increment()")
+		);
+    }
+}
+```
+
+This delegateCall will execute the increment function, which we result in modifying the storage of Caller contract, instead of Called. You can think it like Caller contract boorwed the increment code and executed it in its context.
+
+
+# Storage Slot Collision:
+
+The contract using the delegateCall, must be extermely cautious to predict which of its storage slots will get modified. The previous example worked perfectly because Caller didn’t use the state variable in slot 0.
+
+```solidity
+
+contract Called {
+  uint public number;
+
+  function increment() public {
+    number++;
+  }
+}
+
+contract Caller {
+        // there is a new storage variable here
+    address public calledAddress = 0xd9145CCE52D386f254917e481eB44e9943F39138;
+
+    uint public myNumber; // Number vars names are different but it doen't matter what matter is the storage slots
+
+    function callIncrement() public {        
+		calledAddress.delegatecall(
+			abi.encodeWithSignature("increment()")
+		);
+    }
+
+}
+
+```
+
+Note that in the updated contract above, the content of slot 0 is the address of the Called contract, while the myNumber variable is now stored in slot 1.
+
+If you deploy the provided contracts and execute the callIncrement function, slot 0 of the Caller storage will be incremented, but the calledAddress variable is there, not the myNumber variable.
+
+## Decouple implementation from data
+
+NOTE: One of the most important uses of delegatecall is to decouple the contract where the data is stored, such as Caller in this case, from the contract where the execution logic resides, such as Called. 
+
+Therefore, if one wishes to alter the execution logic, one can simply replace Called with another contract and update the reference to the implementation contract(TARGET CONTRACT), without touching the storage. 
+
+Caller is no longer constrained by the functions it has, it can delegatecall the functions it needs from other contracts.
+
+
+Unfortunately, it's not possible to change the name of the function that will be called, as doing so would alter its signature.
+
+In case there is a need to change the execution logic, for example, subtracting the value of myNumber by 1 unit instead of adding it, you can create a new implementation contract, as shown below.
+
+```solidity
+contract NewCalled {
+
+    uint public number;
+
+    function increment() public {
+        number = number - 1;
+    }
+}
+
+```
+
+After creating the new implementation contract, NewCalled, one can simply deploy this new contract and change the calledAddress state variable in Caller. Of course, Caller would need to have a mechanism to change the address it is issuing the delegateCall to, which we did not include to keep the code concise.
+
+We have successfully modified the business logic utilized by the Caller contract. Separating data from execution logic allows us to create upgradable smart contracts in Solidity.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
