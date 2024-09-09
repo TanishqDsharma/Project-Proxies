@@ -15,3 +15,13 @@ The problem EIP1967 solves is related to storage collisions between the proxy co
 
 **Preventing Collisions:**
 
+An important point to note that is since the `admin` and `implmentation address` needs to change we cannot define these as immutables. These must be defined in storage slots that must not collide with variables in storage variables in implementation contract.
+
+**Q. So, how can we achive this?**
+
+Since, the space for storage variables are exteremly large: 2**256-1. The key idea here is that because the storage space is so vast, if you choose storage slots for the admin and implementation address in a way that is unpredictable/random (like using a hash to generate the slot), it becomes practically impossible for the implementation contract to use the same slots.
+
+### To derive the storage slots:
+
+To derive storage slots for variables like the admin and implementation address in a proxy contract (as per ERC 1967), the process involves using the Keccak-256 hash function and subtracting 1 from the resulting hash value
+
